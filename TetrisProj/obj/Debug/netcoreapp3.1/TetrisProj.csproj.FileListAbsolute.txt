@@ -1,0 +1,13 @@
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.exe
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.deps.json
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.runtimeconfig.json
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.runtimeconfig.dev.json
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.dll
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\bin\Debug\netcoreapp3.1\TetrisProj.pdb
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.csprojAssemblyReference.cache
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.csproj.CoreCompileInputs.cache
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.AssemblyInfoInputs.cache
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.AssemblyInfo.cs
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.dll
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.pdb
+C:\Users\Carbonowy\source\repos\TetrisProj\TetrisProj\obj\Debug\netcoreapp3.1\TetrisProj.genruntimeconfig.cache
