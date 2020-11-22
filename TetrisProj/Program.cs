@@ -7,6 +7,136 @@ using System.Xml.Schema;
 
 namespace TetrisProj
 {   
+    public class Shape
+    {
+        public Shape()
+        {
+            SetShape();
+            ShapePattern = '■';
+        }
+
+        protected void SetShape() { }
+
+        protected char ShapePattern { get; }
+        protected int Center = 19;
+        protected Complex[] Coords;
+    }
+
+    public class Shape_1 : Shape
+    {
+        /*
+            x
+            x
+            x
+            x
+        */
+
+        protected new void SetShape()
+        {
+            Coords = new Complex[4];
+
+            Coords[0] = new Complex(Center, -1);
+            Coords[1] = new Complex(Center, -2);
+            Coords[2] = new Complex(Center, -3);
+            Coords[3] = new Complex(Center, -4);
+        }
+
+    }
+
+    public class Shape_2 : Shape
+    {
+       /*
+         
+         x 
+         x x
+           x
+           x
+       */
+
+        protected new void SetShape()
+        {
+            Coords = new Complex[5];
+
+            Coords[0] = new Complex(Center, -1);
+            Coords[1] = new Complex(Center, -2);
+            Coords[2] = new Complex(Center, -3);
+            Coords[3] = new Complex(Center - 1, -3);
+            Coords[4] = new Complex(Center - 1, -4);
+     
+        }
+
+    }
+
+    public class Shape_3 : Shape
+    {
+        /*
+           x
+         x x
+           x
+           x
+       */
+        protected new void SetShape()
+        {
+            Coords = new Complex[5];
+
+            Coords[0] = new Complex(Center, -1);
+            Coords[1] = new Complex(Center, -2);
+            Coords[2] = new Complex(Center, -3);
+            Coords[3] = new Complex(Center - 1, -3);
+            Coords[4] = new Complex(Center, -4);
+        }
+
+    }
+
+    public class Shape_4 : Shape
+    {
+        /*
+           x x
+             x
+             x
+        */
+        protected new void SetShape()
+        {
+            Coords = new Complex[4];
+
+            Coords[0] = new Complex(Center, -1);
+            Coords[1] = new Complex(Center, -2);
+            Coords[2] = new Complex(Center, -3);
+            Coords[3] = new Complex(Center - 1, -3);
+        }
+
+    }
+
+    public class Shape_5 : Shape
+    {
+        /*
+          x x
+          x x
+        */
+
+        protected new void SetShape()
+        {
+            Coords = new Complex[4];
+
+            Coords[0] = new Complex(Center, -1);
+            Coords[1] = new Complex(Center, -2);
+            Coords[2] = new Complex(Center - 1, -2);
+            Coords[3] = new Complex(Center - 1, -1);
+        }
+
+    }
+
+    public class MapAndInteface
+    {
+        protected MapAndInteface()
+        {
+
+        }
+    }
+    public class Logic : MapAndInteface
+    {
+
+    }
 
     public class Saving
     {
@@ -51,10 +181,12 @@ namespace TetrisProj
 
         }
 
+        
+
         private bool MenuControl()
         {
             bool NewGame = false;
-               
+           
             do
             {
                 key = Console.ReadKey(true);
@@ -65,13 +197,13 @@ namespace TetrisProj
                     {
                         Console.SetCursorPosition(27, 12);
                         Console.Beep(100, 200);
-                        NewGame = true;
+                        NewGame = false;
                     }
                     else
                     {
                         Console.SetCursorPosition(26, 10);
                         Console.Beep(200, 200);
-                        NewGame = false;
+                        NewGame = true;
                     }
                 }
                 
@@ -79,28 +211,21 @@ namespace TetrisProj
             } 
             while (key.Key != ConsoleKey.Enter);
 
-            
-
             return NewGame;
         }
 
 
         private ConsoleKeyInfo key;
-        private bool _NewGame;
+        private bool _NewGame { get; }
         //"■")
     }
 
     class Program
     {
         static void Main(string[] args)
-        {
-
-            
+        {          
             Menu _Menu = new Menu();
 
-            char k;
-
-            //while( (k = Console.ReadKey().KeyChar) != 'a');
 
 
 
