@@ -141,6 +141,56 @@ namespace TetrisProj
 
     }
 
+    
+    public class Logic
+    {
+        public Logic()
+        {
+            PresentShape = randomShape();
+            NextShape = randomShape();
+        }
+
+        private Shape randomShape()
+        {
+            Random rnd = new Random();
+
+            switch(rnd.Next(1,5))
+            {
+                case 1: return new Shape_1();
+                case 2: return new Shape_2();
+                case 3: return new Shape_3();
+                case 4: return new Shape_4();
+                case 5: return new Shape_5();
+            }
+
+            return new Shape_5();
+        }
+
+
+        private Shape PresentShape;
+        private Shape NextShape;
+    }
+
+    public static class Saving
+    {
+        static public void LoadGame()
+        {
+           
+        }
+
+        static public void SaveGame()
+        {
+
+        }
+
+        static public void NewHighestScore(int Score)
+        {
+
+        }
+
+        public static int HighestScore;
+    }
+
     public class GamePanel
     {
         public GamePanel()
@@ -150,13 +200,13 @@ namespace TetrisProj
 
         private void DrawGamePanel()
         {
-            for (int i = 28; i < 39; i++) 
+            for (int i = 28; i < 39; i++)
             {
                 Draw.One('─', i, 0);
                 Draw.One('─', i, 7);
                 Draw.One('─', i, 10);
             }
-            
+
             for (int i = 1; i < 39; i++)
                 Draw.One('─', i, 20);
 
@@ -187,18 +237,6 @@ namespace TetrisProj
 
             Draw.Few("'A'/'D'", 29, 5);
             Draw.Few("└ ROTATE", 29, 6);
-        }
-    }
-    public class Logic
-    {
-
-    }
-
-    public class Saving
-    {
-        public Saving(bool _NewGame)
-        {
-
         }
     }
 
@@ -271,7 +309,7 @@ namespace TetrisProj
         }
 
         private ConsoleKeyInfo key;
-        private bool _NewGame { get; }
+        public bool _NewGame { get; }
     }
 
     class Program
@@ -280,6 +318,10 @@ namespace TetrisProj
         {          
             Menu _Menu = new Menu();
             GamePanel _GamePanel = new GamePanel();
+
+            if (_Menu._NewGame)
+                Saving.LoadGame();
+
 
 
 
