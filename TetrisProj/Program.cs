@@ -7,6 +7,8 @@ using System.Xml.Schema;
 
 namespace TetrisProj
 {
+    public enum Dir { UP, DOWN, LEFT, RIGHT };
+
     static public class Draw
     {
         public static void One(char c, int X, int Y)
@@ -30,13 +32,13 @@ namespace TetrisProj
             ShapePattern = '■';
         }
 
-        protected void SetShape() { }
+        protected virtual void SetShape() { }
 
-        protected char ShapePattern { get; }
-        protected int Center = 19;
-        protected Complex[] Coords;
+        public char ShapePattern;
+        protected int Center = 14;
+        public Complex[] Coords;
     }
-
+  
     public class Shape_1 : Shape
     {
         /*
@@ -45,8 +47,8 @@ namespace TetrisProj
             x
             x
         */
-
-        protected new void SetShape()
+   
+        protected override void SetShape()
         {
             Coords = new Complex[4];
 
@@ -54,6 +56,8 @@ namespace TetrisProj
             Coords[1] = new Complex(Center, -2);
             Coords[2] = new Complex(Center, -3);
             Coords[3] = new Complex(Center, -4);
+
+            base.SetShape();
         }
 
     }
@@ -68,7 +72,7 @@ namespace TetrisProj
            x
        */
 
-        protected new void SetShape()
+        protected override void SetShape()
         {
             Coords = new Complex[5];
 
@@ -77,7 +81,9 @@ namespace TetrisProj
             Coords[2] = new Complex(Center, -3);
             Coords[3] = new Complex(Center - 1, -3);
             Coords[4] = new Complex(Center - 1, -4);
-     
+            
+            base.SetShape();
+
         }
 
     }
@@ -90,7 +96,7 @@ namespace TetrisProj
            x
            x
        */
-        protected new void SetShape()
+        protected override void SetShape()
         {
             Coords = new Complex[5];
 
@@ -99,6 +105,8 @@ namespace TetrisProj
             Coords[2] = new Complex(Center, -3);
             Coords[3] = new Complex(Center - 1, -3);
             Coords[4] = new Complex(Center, -4);
+
+            base.SetShape();
         }
 
     }
@@ -110,7 +118,7 @@ namespace TetrisProj
              x
              x
         */
-        protected new void SetShape()
+        protected override void SetShape()
         {
             Coords = new Complex[4];
 
@@ -118,6 +126,8 @@ namespace TetrisProj
             Coords[1] = new Complex(Center, -2);
             Coords[2] = new Complex(Center, -3);
             Coords[3] = new Complex(Center - 1, -3);
+
+            base.SetShape();
         }
 
     }
@@ -129,7 +139,7 @@ namespace TetrisProj
           x x
         */
 
-        protected new void SetShape()
+        protected override void SetShape()
         {
             Coords = new Complex[4];
 
@@ -137,6 +147,8 @@ namespace TetrisProj
             Coords[1] = new Complex(Center, -2);
             Coords[2] = new Complex(Center - 1, -2);
             Coords[3] = new Complex(Center - 1, -1);
+
+            base.SetShape();
         }
 
     }
@@ -148,6 +160,91 @@ namespace TetrisProj
         {
             PresentShape = randomShape();
             NextShape = randomShape();
+
+            Score = 0;
+
+            DrawNextShape();
+
+            MainLoop();
+        }
+
+        private void MainLoop()
+        {
+            bool HasTouchedGround;
+
+            while(_pressedkey.Key != ConsoleKey.Escape)
+            {
+                if (_pressedkey.Key == ConsoleKey.A)
+                    Rotate(Dir.LEFT);
+                else if (_pressedkey.Key == ConsoleKey.D)
+                    Rotate(Dir.RIGHT);
+                else if (_pressedkey.Key == ConsoleKey.Spacebar)
+                    Mirror();
+                else if (_pressedkey.Key == ConsoleKey.LeftArrow)
+                    Move(Dir.LEFT);
+                else if (_pressedkey.Key == ConsoleKey.RightArrow)
+                    Move(Dir.RIGHT);
+                else if (_pressedkey.Key == ConsoleKey.DownArrow)
+                    RushDown();
+
+                //if (_pressedkey.Key != ConsoleKey.Enter) _pressedkey = Enter;
+
+                HasTouchedGround = checkBlockSurroundings();
+
+                if(!HasTouchedGround)
+                {
+                    DrawNextGameState();
+                }
+                else
+                {
+                    ReduceGround();
+                    switchShapes();
+
+                    DrawNextGameState();
+                }
+
+                
+            }
+        }
+
+        private void switchShapes()
+        {
+
+        }
+
+        private void ReduceGround()
+        {
+
+        }
+
+        private bool checkBlockSurroundings()
+        {
+            return false;
+        }
+
+        private void DrawNextGameState()
+        {
+
+        }
+
+        private void Move(Dir Direction)
+        {
+
+        }
+
+        private void Rotate(Dir Direction)
+        {
+
+        }
+
+        private void Mirror()
+        {
+
+        }
+
+        private void RushDown()
+        {
+
         }
 
         private Shape randomShape()
@@ -163,12 +260,26 @@ namespace TetrisProj
                 case 5: return new Shape_5();
             }
 
-            return new Shape_5();
+            return new Shape();
         }
 
+        private void DrawNextShape()
+        {
+            for (int i = 0; i < NextShape.Coords.Length; i++)
+                Draw.One(
+                            NextShape.ShapePattern,
+                            (int)NextShape.Coords[i].Real + 19,
+                            (int)NextShape.Coords[i].Imaginary + 19
+                         );
+            
+        }
 
+        
         private Shape PresentShape;
         private Shape NextShape;
+
+        public int Score;
+        public ConsoleKeyInfo _pressedkey;
     }
 
     public static class Saving
@@ -238,6 +349,11 @@ namespace TetrisProj
             Draw.Few("'A'/'D'", 29, 5);
             Draw.Few("└ ROTATE", 29, 6);
         }
+    }
+
+    public class PauseScreen : Menu
+    {
+
     }
 
     public class Menu
@@ -322,7 +438,16 @@ namespace TetrisProj
             if (_Menu._NewGame)
                 Saving.LoadGame();
 
+            Logic Game = new Logic();
 
+            ConsoleKeyInfo pressedkey;
+
+            do
+            {
+                pressedkey = Console.ReadKey(true);
+                Game._pressedkey = pressedkey;
+
+            } while (pressedkey.Key != ConsoleKey.Escape);
 
 
 
