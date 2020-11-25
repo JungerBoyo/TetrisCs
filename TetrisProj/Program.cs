@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Xml.Schema;
 using System.Globalization;
 using System.Data;
+using System.ComponentModel;
 
 namespace TetrisProj
 {
@@ -24,6 +25,14 @@ namespace TetrisProj
             Console.SetCursorPosition(X, Y);
             Console.Write(s);
         }
+
+        public static void ClearSpecificConsoleArea(int Index0X, int Index0Y, int Width, int Hight)
+        {
+            for (int y = Index0Y; y < Index0Y+Hight; y++)
+                for (int x = Index0X; x < Index0X+Width; x++)
+                    One(' ', x, y);
+            
+        }
     }
 
     public class Shape
@@ -31,7 +40,7 @@ namespace TetrisProj
         public Shape()
         {
             SetShape();
-            ShapePattern = '■';
+            ShapePattern = 'x';
         }
 
         protected virtual void SetShape() { }
@@ -165,6 +174,7 @@ namespace TetrisProj
             
 
             Score = 0;
+            Draw.Few($"[{(Score).ToString()}]", 35, 9);
 
             DrawNextShape();
         }
@@ -175,21 +185,18 @@ namespace TetrisProj
 
             while(_pressedkey.Key != ConsoleKey.Escape)
             {
-                /*
-                if (_pressedkey.Key == ConsoleKey.A)
-                    Rotate(Dir.LEFT);
-                else if (_pressedkey.Key == ConsoleKey.D)
-                    Rotate(Dir.RIGHT);
-                else if (_pressedkey.Key == ConsoleKey.Spacebar)
-                    Mirror();
-                else if (_pressedkey.Key == ConsoleKey.LeftArrow)
-                    Move(Dir.LEFT);
-                else if (_pressedkey.Key == ConsoleKey.RightArrow)
-                    Move(Dir.RIGHT);
-                else if (_pressedkey.Key == ConsoleKey.DownArrow)
-                    RushDown();
-
-                //if (_pressedkey.Key != ConsoleKey.Enter) _pressedkey = Enter;*/
+                switch(_pressedkey.Key)
+                {
+                    case ConsoleKey.A: Rotate(Dir.LEFT); break;
+                    case ConsoleKey.D: Rotate(Dir.RIGHT); break;
+                    case ConsoleKey.Spacebar: Mirror(); break;
+                    case ConsoleKey.LeftArrow: Move(Dir.LEFT, 0); break;
+                    case ConsoleKey.RightArrow: Move(Dir.RIGHT, 0); break;
+                    case ConsoleKey.Q: Move(Dir.LEFT, -1); break;
+                    case ConsoleKey.E: Move(Dir.RIGHT, 1); break;
+                    case ConsoleKey.DownArrow: RushDown(); break;
+                    default: break;
+                }
 
                 HasTouchedGround = checkBlockSurroundings();
 
@@ -199,19 +206,24 @@ namespace TetrisProj
                 {
                     CheckReduce();
                     switchShapes();
-
                     DrawNextGameState();
+
+                    HasTouchedGround = false;
                 }
                 
 
-                Thread.Sleep(700);
+                Thread.Sleep(500);
                 
             }
         }
 
         private void switchShapes()
         {
-
+            PresentShape = new Shape_1();
+            NextShape = randomShape();
+            
+            Draw.ClearSpecificConsoleArea(29, 14, 9, 5);
+            DrawNextShape();
         }
 
         private void CheckReduce()
@@ -221,11 +233,11 @@ namespace TetrisProj
          
             for (int i = 19; i>=0; i--)
             {
-                for (j = 0; j < 26; j++)
+                for (j = 1; j < 27; j++)
                     if(BusySlots[i,j] == false)
                         break;
 
-                if (j == 25)
+                if (j == 27)
                 {
                     LayerToReduce[i] = true;
                     Reduce = true;
@@ -239,7 +251,33 @@ namespace TetrisProj
 
         private void ReduceAndMergeLayers()
         {
+            
 
+            for (int i = 19; i >= 0; i--)
+            {
+                if (LayerToReduce[i] == true)
+                {
+                    Score += 5;
+
+                    for (int R=19; R>=0; R--)
+                        for (int C = 1; C < 27; C++)                       
+                            BusySlots[R + 1, C] = BusySlots[R, C];
+
+                    Refresh();               
+                }
+            }
+        }
+
+        private void Refresh()
+        {
+            for (int i = 1; i < 27; i++)
+                for (int j = 0; j < 20; j++)
+                {
+                    if (BusySlots[j, i] == false)
+                        Draw.One(' ', i, j);
+                    else
+                        Draw.One('x', i, j);
+                }
         }
 
         private bool checkBlockSurroundings()
@@ -247,11 +285,13 @@ namespace TetrisProj
             for(int i=0; i<PresentShape.Coords.Length; i++)
             {
                 if(PresentShape.Coords[i].Imaginary >= 0 )
-                    if (PresentShape.Coords[i].Imaginary + 1 >= 20 || BusySlots[(int)PresentShape.Coords[i].Imaginary+1,(int)PresentShape.Coords[i].Real])
+                    if (PresentShape.Coords[i].Imaginary + 1 >= 20 || BusySlots[(int)PresentShape.Coords[i].Imaginary+1,(int)PresentShape.Coords[i].Real] == true)
                     {
                         for (int b = 0; b < PresentShape.Coords.Length; b++)
-                            BusySlots[(int)PresentShape.Coords[i].Imaginary,(int)PresentShape.Coords[i].Real] = true;
+                            BusySlots[(int)PresentShape.Coords[b].Imaginary,(int)PresentShape.Coords[b].Real] = true;
 
+                        Console.Beep(200,500);
+                        Draw.Few($"[{(++Score).ToString()}]", 35, 9);
                         return true;
                     }
             }
@@ -261,6 +301,7 @@ namespace TetrisProj
 
         private void DrawNextGameState()
         {
+
             for(int i=0; i<PresentShape.Coords.Length; i++)
             {
                 if(PresentShape.Coords[i].Imaginary + 1 >= 0)
@@ -271,37 +312,144 @@ namespace TetrisProj
                         Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
                     }
                     else
-                    {
-                        Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+                    {                        
+                        Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary); 
                         PresentShape.Coords[i] = new Complex(PresentShape.Coords[i].Real, PresentShape.Coords[i].Imaginary + 1);
-                        Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
                     }
+                    
                 }
                 else
                 {
                     PresentShape.Coords[i] = new Complex(PresentShape.Coords[i].Real, PresentShape.Coords[i].Imaginary + 1);
                 }
             }
+
+            for (int i = 0; i < PresentShape.Coords.Length; i++)          
+                if (PresentShape.Coords[i].Imaginary >= 0)               
+                    Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+           
         }
 
-        private void Move(Dir Direction)
+        private void Move(Dir Direction, int Dash)
         {
+            int Mover = (Direction == Dir.RIGHT) ? (1+Dash) : (-1+Dash);
+            bool WallBeside = false;
 
+            for(int i=0; i<PresentShape.Coords.Length; i++)          
+                if(PresentShape.Coords[i].Real + Mover == 27 || PresentShape.Coords[i].Real + Mover == 0)
+                {
+                    WallBeside = true;
+                    break;
+                }
+
+            if(!WallBeside)
+            {
+                for (int i = 0; i < PresentShape.Coords.Length; i++)
+                {
+                    if (PresentShape.Coords[i].Imaginary >= 0)
+                    {                                               
+                         Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+                         PresentShape.Coords[i] = new Complex(PresentShape.Coords[i].Real+Mover, PresentShape.Coords[i].Imaginary);                        
+                    }
+                    else
+                    {
+                        PresentShape.Coords[i] = new Complex(PresentShape.Coords[i].Real+Mover, PresentShape.Coords[i].Imaginary);
+                    }
+                }
+
+                for (int i = 0; i < PresentShape.Coords.Length; i++)
+                    if (PresentShape.Coords[i].Imaginary >= 0)
+                        Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+            }
+
+
+            _pressedkey = new ConsoleKeyInfo();
         }
 
         private void Rotate(Dir Direction)
         {
+            double rotator = (Direction == Dir.RIGHT) ? 3 : 1;
+            int corrector = (Direction == Dir.RIGHT) ? -1 : 1;
 
+            int MaxImagineryValue = -10;
+            Complex CenterOfRotation = new Complex(0, 0);
+            Complex ShiftVector;
+
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+                if (PresentShape.Coords[i].Imaginary > MaxImagineryValue)
+                {
+                    MaxImagineryValue = (int)PresentShape.Coords[i].Imaginary;
+                    CenterOfRotation = PresentShape.Coords[i];
+                }
+
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+
+                ShiftVector = Complex.Multiply(Complex.Add(CenterOfRotation, Complex.Negate(PresentShape.Coords[i])), Complex.Pow(Complex.ImaginaryOne,rotator));
+                PresentShape.Coords[i] = Complex.Add(ShiftVector, Complex.Add(CenterOfRotation, new Complex(corrector, -1)));
+            }
+
+            _pressedkey = new ConsoleKeyInfo();
         }
 
         private void Mirror()
         {
+            int maxImagineryValue = -1;
+            int minImaginaryValue = 25;
 
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                if (maxImagineryValue < PresentShape.Coords[i].Imaginary)
+                    maxImagineryValue = (int)PresentShape.Coords[i].Imaginary;
+
+                else if (minImaginaryValue > PresentShape.Coords[i].Imaginary)
+                    minImaginaryValue = (int)PresentShape.Coords[i].Imaginary;
+                
+            }
+
+
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                if (PresentShape.Coords[i].Imaginary >= 0)
+                    Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+
+                PresentShape.Coords[i] = Complex.Conjugate(PresentShape.Coords[i]);
+                PresentShape.Coords[i] = Complex.Add(PresentShape.Coords[i], (minImaginaryValue + maxImagineryValue + 1) * Complex.ImaginaryOne);
+            }
+
+            for(int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                if (PresentShape.Coords[i].Imaginary >= 0)
+                    Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+            }
+
+            _pressedkey = new ConsoleKeyInfo();
         }
 
         private void RushDown()
         {
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                if (PresentShape.Coords[i].Imaginary >= 0)
+                    Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+            }
 
+            while (!checkBlockSurroundings())
+            {
+                for(int i=0; i<PresentShape.Coords.Length; i++)
+                {
+                    PresentShape.Coords[i] = Complex.Add(PresentShape.Coords[i], Complex.ImaginaryOne);
+                }
+            }
+
+            for (int i = 0; i < PresentShape.Coords.Length; i++)
+            {
+                if (PresentShape.Coords[i].Imaginary >= 0)
+                    Draw.One(PresentShape.ShapePattern, (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+            }
+
+            _pressedkey = new ConsoleKeyInfo();
         }
 
         private Shape randomShape()
@@ -334,9 +482,8 @@ namespace TetrisProj
         
         private Shape PresentShape;
         private Shape NextShape;
-        private bool[,] BusySlots = new bool[20,26];
+        private bool[,] BusySlots = new bool[25,27];
         private bool[] LayerToReduce = new bool[20];
-        private ConsoleKey DefaultKey = ConsoleKey.C;
 
         public int Score;
         public ConsoleKeyInfo _pressedkey;
@@ -493,6 +640,7 @@ namespace TetrisProj
     {
         static void Main(string[] args)
         {
+            
             Menu _Menu = new Menu();
             GamePanel _GamePanel = new GamePanel();
 
@@ -506,6 +654,7 @@ namespace TetrisProj
             t.Start();
 
             ConsoleKeyInfo pressedkey;
+            Console.CursorVisible = false;
 
             do
             {
@@ -520,7 +669,7 @@ namespace TetrisProj
 
             Console.SetCursorPosition(0, 21);
 
-
+            
 
 
 
