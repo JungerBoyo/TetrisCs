@@ -7,6 +7,8 @@ using System.Xml.Schema;
 using System.Globalization;
 using System.Data;
 using System.ComponentModel;
+using Microsoft.VisualBasic;
+using System.Text;
 
 namespace TetrisProj
 {
@@ -40,7 +42,7 @@ namespace TetrisProj
         public Shape()
         {
             SetShape();
-            ShapePattern = 'x';
+            ShapePattern = '■';
         }
 
         protected virtual void SetShape() { }
@@ -171,7 +173,8 @@ namespace TetrisProj
         {
             PresentShape = randomShape();
             NextShape = randomShape();
-            
+
+            GP = new GamePanel();
 
             Score = 0;
             Draw.Few($"[{(Score).ToString()}]", 35, 9);
@@ -183,10 +186,10 @@ namespace TetrisProj
         {
             bool HasTouchedGround;
 
-            while(_pressedkey.Key != ConsoleKey.Escape)
+            while(true)
             {
                 switch(_pressedkey.Key)
-                {
+                {                   
                     case ConsoleKey.A: Rotate(Dir.LEFT); break;
                     case ConsoleKey.D: Rotate(Dir.RIGHT); break;
                     case ConsoleKey.Spacebar: Mirror(); break;
@@ -205,25 +208,75 @@ namespace TetrisProj
                 else
                 {
                     CheckReduce();
+
+                    if (gameOver = GameOver() == true)
+                        break;
+                    
                     switchShapes();
                     DrawNextGameState();
 
                     HasTouchedGround = false;
-                }
-                
 
-                Thread.Sleep(500);
+                    Refresh();
+                }
+
+                if (_pressedkey.Key == ConsoleKey.P)            
+                    if (PAUSE()) break;
                 
+                Thread.Sleep(400);
             }
+        }
+
+        private bool PAUSE()
+        {
+            PauseOn = true;
+
+            Pause = new PauseScreen();
+
+            if (Pause.TriState == 0 || Pause.TriState == 1)
+            {
+                if (Pause.TriState == 0)
+                    Saving.SaveGame();
+
+                Quit = true;
+
+                return true;
+            }
+
+            Console.Clear();
+
+            Refresh();
+            GP.DrawGamePanelInvoker();
+            Draw.Few($"[{(++Score).ToString()}]", 35, 9);
+            DrawNextShape();
+
+            Console.CursorVisible = false;
+
+            PauseOn = false;
+
+            return false;
         }
 
         private void switchShapes()
         {
-            PresentShape = new Shape_1();
+            PresentShape = NextShape;
             NextShape = randomShape();
             
             Draw.ClearSpecificConsoleArea(29, 14, 9, 5);
             DrawNextShape();
+        }
+
+        private bool GameOver()
+        {
+            int i;
+
+            for (i = 0; i < PresentShape.Coords.Length; i++)
+                if (PresentShape.Coords[i].Imaginary < 0)
+                    break;
+
+            if (i == PresentShape.Coords.Length) return false;
+            else return true;
+ 
         }
 
         private void CheckReduce()
@@ -252,7 +305,6 @@ namespace TetrisProj
         private void ReduceAndMergeLayers()
         {
             
-
             for (int i = 19; i >= 0; i--)
             {
                 if (LayerToReduce[i] == true)
@@ -276,7 +328,7 @@ namespace TetrisProj
                     if (BusySlots[j, i] == false)
                         Draw.One(' ', i, j);
                     else
-                        Draw.One('x', i, j);
+                        Draw.One('■', i, j);
                 }
         }
 
@@ -288,7 +340,8 @@ namespace TetrisProj
                     if (PresentShape.Coords[i].Imaginary + 1 >= 20 || BusySlots[(int)PresentShape.Coords[i].Imaginary+1,(int)PresentShape.Coords[i].Real] == true)
                     {
                         for (int b = 0; b < PresentShape.Coords.Length; b++)
-                            BusySlots[(int)PresentShape.Coords[b].Imaginary,(int)PresentShape.Coords[b].Real] = true;
+                            if(PresentShape.Coords[b].Imaginary >= 0)
+                                BusySlots[(int)PresentShape.Coords[b].Imaginary,(int)PresentShape.Coords[b].Real] = true;
 
                         Console.Beep(200,500);
                         Draw.Few($"[{(++Score).ToString()}]", 35, 9);
@@ -368,6 +421,8 @@ namespace TetrisProj
 
         private void Rotate(Dir Direction)
         {
+      
+
             double rotator = (Direction == Dir.RIGHT) ? 3 : 1;
             int corrector = (Direction == Dir.RIGHT) ? -1 : 1;
 
@@ -384,7 +439,8 @@ namespace TetrisProj
 
             for (int i = 0; i < PresentShape.Coords.Length; i++)
             {
-                Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
+                if(PresentShape.Coords[i].Imaginary >= 0)
+                    Draw.One(' ', (int)PresentShape.Coords[i].Real, (int)PresentShape.Coords[i].Imaginary);
 
                 ShiftVector = Complex.Multiply(Complex.Add(CenterOfRotation, Complex.Negate(PresentShape.Coords[i])), Complex.Pow(Complex.ImaginaryOne,rotator));
                 PresentShape.Coords[i] = Complex.Add(ShiftVector, Complex.Add(CenterOfRotation, new Complex(corrector, -1)));
@@ -456,7 +512,7 @@ namespace TetrisProj
         {
             Random rnd = new Random();
 
-            switch(rnd.Next(1,5))
+            switch(rnd.Next(1,6))
             {
                 case 1: return new Shape_1();
                 case 2: return new Shape_2();
@@ -484,10 +540,14 @@ namespace TetrisProj
         private Shape NextShape;
         private bool[,] BusySlots = new bool[25,27];
         private bool[] LayerToReduce = new bool[20];
+        private PauseScreen Pause;
+        private GamePanel GP;
 
         public int Score;
         public ConsoleKeyInfo _pressedkey;
-        
+        public bool gameOver;
+        public bool PauseOn = false;
+        public bool Quit = false;
     }
 
     public static class Saving
@@ -510,14 +570,44 @@ namespace TetrisProj
         public static int HighestScore;
     }
 
-    public class GamePanel
+    public class Panel
+    {
+        public Panel()
+        {
+            DrawGamePanel();
+        }
+
+        protected virtual void DrawGamePanel()
+        {
+            Console.Clear();
+
+            for (int i = 0; i < 40; i++)
+                Draw.One('─', i, 0);
+
+            for (int j = 1; j < 20; j++)
+                for (int i = 0; i < 40; i += 39)
+                    Draw.One('│', i, j);
+
+            for (int i = 1; i < 39; i++)
+                Draw.One('─', i, 20);
+
+            Draw.One('┌', 0, 0);
+            Draw.One('┐', 39, 0);
+            Draw.One('┘', 39, 20);
+            Draw.One('└', 0, 20);
+        }
+    }
+
+    public class GamePanel : Panel
     {
         public GamePanel()
         {
             DrawGamePanel();
         }
 
-        private void DrawGamePanel()
+        public void DrawGamePanelInvoker() => DrawGamePanel();
+
+        protected override void DrawGamePanel()
         {
             for (int i = 28; i < 39; i++)
             {
@@ -551,77 +641,148 @@ namespace TetrisProj
             Draw.Few("RECORD ", 28, 8);
             Draw.Few("SCORE ", 28, 9);
 
-            Draw.Few("S P A C E", 29, 2);
-            Draw.Few("└ MIRROR", 29, 3);
-
-            Draw.Few("'A'/'D'", 29, 5);
-            Draw.Few("└ ROTATE", 29, 6);
         }
     }
 
-    public class PauseScreen : Menu
+    public class GameOverScreen : Panel
     {
+        public GameOverScreen()
+        {
+            DrawGamePanel();
+        }
 
+        ~GameOverScreen() => Console.Clear();
+
+        protected override void DrawGamePanel()
+        {
+            base.DrawGamePanel();
+            Draw.Few("───────G  A  M  E    O  V  E  R───────",  1, 10);
+           
+
+        }
     }
 
-    public class Menu
+    public class PauseScreen : Panel
+    {
+        public PauseScreen()
+        {
+            PauseControl();
+        }
+
+        protected override void DrawGamePanel()
+        {
+            base.DrawGamePanel();
+
+            Draw.Few(">>RESUME<<<", 14, 8);
+            Draw.Few(">SAVE&QUIT<", 14, 10);
+            Draw.Few(">>>QUIT<<<<", 14, 12);
+        }
+
+        private void PauseControl()
+        {
+            DrawGamePanel();
+
+            int CursorYposition = 10;
+            Console.CursorVisible = true;
+
+            Console.SetCursorPosition(25, CursorYposition);
+
+            do
+            {
+                _key = Console.ReadKey(true);
+
+                if (_key.Key == ConsoleKey.W && CursorYposition - 2 >= 8)
+                {
+                    CursorYposition -= 2;
+                    Console.SetCursorPosition(25, CursorYposition);
+                    Console.Beep(100, 200);
+                }
+                else if (_key.Key == ConsoleKey.S && CursorYposition + 2 <= 12)
+                {
+                    CursorYposition += 2;
+                    Console.SetCursorPosition(25, CursorYposition);
+                    Console.Beep(200, 200);
+                }
+            }
+            while (_key.Key != ConsoleKey.Enter);
+
+            if (CursorYposition == 8) TriState = -1;
+            else if (CursorYposition == 10) TriState = 0;
+            else TriState = 1;
+
+        }
+
+        ConsoleKeyInfo _key;
+        public int TriState;
+    }
+
+    public class ControlsScreen : Panel
+    {
+        public ControlsScreen()
+        {
+            DrawGamePanel();
+        }
+
+        protected override void DrawGamePanel()
+        {
+            base.DrawGamePanel();
+
+            Draw.Few("──────C O N T R O L S──────", 1, 3);
+            Draw.Few("* Move + Dash -> Q/E", 3, 5);
+            Draw.Few("* Move -> LeftArrow/RightArrow", 3, 7);
+            Draw.Few("* Rotate -> A/D", 3, 9);
+            Draw.Few("* Rush -> DownArrow", 3, 11);
+            Draw.Few("* Mirror Shape -> SpaceBar", 3, 13);
+            Draw.Few("* Pause -> P", 3, 15);
+            Draw.Few(" PRESS 'Q' TO ESCAPE ", 18, 19);
+        }
+    }
+
+    public class Menu : Panel
     {
         public Menu()
         {
-            DrawMenu();
-            _NewGame = MenuControl();
+            while (MenuControl() != true) ;
         }
 
-        private void DrawMenu()
+        protected override void DrawGamePanel()
         {
             Console.SetWindowSize(41, 21);
 
-            for(int i=0; i<40; i++) 
-                Draw.One('─', i, 0);
-
-            for (int j = 1; j < 20; j++)
-                for (int i = 0; i < 40; i+=39)
-                    Draw.One('│', i, j);
-                
-            for (int i = 1; i < 39; i++)
-                Draw.One('─', i, 20);
+            base.DrawGamePanel();
 
             Draw.Few("T  E  T  R  I  S", 12, 6);
-            Draw.Few("> New Game <", 14, 10);
-            Draw.Few("> Load  Game <", 13, 12);
+            Draw.Few(">>New─Game<<".ToUpper(), 14, 10);
+            Draw.Few(">Load──Game<".ToUpper(), 14, 12);
+            Draw.Few(">>Controls<<".ToUpper(), 14, 14);
 
-            Draw.One('┌', 0, 0);
-            Draw.One('┐', 39, 0);
-            Draw.One('┘', 39, 20);
-            Draw.One('└', 0, 20);
-
-            Console.SetCursorPosition(27, 12);
-
+            Console.SetCursorPosition(26, 12);
         }
 
         private bool MenuControl()
         {
-            bool NewGame = false;
+            DrawGamePanel();
+
+            int CursorYposition = 12;
+            Console.CursorVisible = true;
            
             do
             {
                 key = Console.ReadKey(true);
 
-                if(key.Key == ConsoleKey.W || key.Key == ConsoleKey.S)
+                if (key.Key == ConsoleKey.W && CursorYposition-2 >= 10)
                 {
-                    if(NewGame)
-                    {
-                        Console.SetCursorPosition(27, 12);
-                        Console.Beep(100, 200);
-                        NewGame = false;
-                    }
-                    else
-                    {
-                        Console.SetCursorPosition(26, 10);
-                        Console.Beep(200, 200);
-                        NewGame = true;
-                    }
+                    CursorYposition -= 2;
+                    Console.SetCursorPosition(26, CursorYposition);
+                    Console.Beep(100, 200);
                 }
+                else if(key.Key == ConsoleKey.S && CursorYposition + 2 <= 14)
+                {
+                    CursorYposition += 2;
+                    Console.SetCursorPosition(26, CursorYposition);
+                    Console.Beep(200, 200);
+                }     
+               
                 
 
             } 
@@ -629,23 +790,34 @@ namespace TetrisProj
 
             Console.Clear();
 
-            return NewGame;
+            if (CursorYposition == 14)
+            {
+                Console.CursorVisible = false;
+                CS = new ControlsScreen();
+
+                key = Console.ReadKey(true);
+
+                while (key.Key != ConsoleKey.Q);
+
+                Console.Clear();
+
+                return false;
+
+            }
+            else return true;
         }
 
         private ConsoleKeyInfo key;
+        private ControlsScreen CS;
         public bool _NewGame { get; }
     }
 
     class Program
     {
         static void Main(string[] args)
-        {
-            
+        {          
             Menu _Menu = new Menu();
-            GamePanel _GamePanel = new GamePanel();
-
-            if (_Menu._NewGame)
-                Saving.LoadGame();
+            GameOverScreen GOS;
 
             Logic Game = new Logic();
 
@@ -658,87 +830,23 @@ namespace TetrisProj
 
             do
             {
-                pressedkey = Console.ReadKey(true);
-                Game._pressedkey = pressedkey;
+                if (!Game.PauseOn)
+                {
+                    pressedkey = Console.ReadKey(true);
+                    Game._pressedkey = pressedkey;
+                }
 
-            } while (pressedkey.Key != ConsoleKey.Escape);
+            } while (Game.gameOver != true && Game.Quit != true);
+
+            
+
+            if (Game.gameOver == true)
+               GOS = new GameOverScreen(); 
 
             t.Join();
 
 
-
             Console.SetCursorPosition(0, 21);
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            /*
-            List<Complex> shape = new List<Complex>();
-            Complex tmp;
-
-            shape.Add(new Complex(1 ,1));
-            shape.Add(new Complex(2, 1));
-            shape.Add(new Complex(2, 2));
-            shape.Add(new Complex(2, 3));
-            shape.Add(new Complex(3, 3));
-
-            foreach (var coord in shape)
-            {
-                Console.SetCursorPosition((int)coord.Real,(int)coord.Imaginary);
-                Console.Write('x');
-            }
-
-            
-            Thread.Sleep(1000);
-            Console.Clear();
-
-          
-
-            foreach (Complex coord in shape)
-            {
-                
-
-                tmp = Complex.Multiply(coord,Complex.ImaginaryOne);
-                tmp = Complex.Add(tmp, 4 * Complex.One);
-
-                
-
-                Console.SetCursorPosition((int)tmp.Real, (int)tmp.Imaginary);
-                Console.Write('x');
-            }
-            
-
-            Thread.Sleep(1000);
-            Console.Clear();
-
-
-            
-            foreach (var coord in shape)
-            {
-                tmp = Complex.Conjugate(coord);
-                tmp = Complex.Add(tmp, 4 * Complex.ImaginaryOne);
-
-
-                Console.SetCursorPosition((int)tmp.Real, (int)tmp.Imaginary);
-                Console.Write('x');
-            }
-            
-
-
-            Console.SetCursorPosition(10, 10);
-            */
         }
     }
 }
